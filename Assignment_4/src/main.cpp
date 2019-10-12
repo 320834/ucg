@@ -194,11 +194,100 @@ AABBTree::AABBTree(const MatrixXd &V, const MatrixXi &F) {
 
 bool Sphere::intersect(const Ray &ray, Intersection &hit) {
 	// TODO (Assignment 2)
-	return false;
-}
+	
+	//Look at slides on how to intersect a sphere
+	// std::cout << position(0) << std::endl;
+	// std::cout << radius << std::endl;
 
+	Vector3d rayLine = ray.direction - ray.origin;
+
+	double A = (rayLine(0)*rayLine(0)) + (rayLine(1) * rayLine(1)) + (rayLine(2) * rayLine(2));
+	double B = (2 * rayLine(0) * (ray.origin(0) - position(0)) + (2 * rayLine(1) * (ray.origin(1) - position(1))) + (2 * rayLine(2) * (ray.origin(2) - position(2))));
+	double C = (position(0)*position(0) + position(1)*position(1) + position(2)*position(2) + ray.origin(0)*ray.origin(0) + ray.origin(1)*ray.origin(1) + ray.origin(2)*ray.origin(2) - 2 * (ray.origin(0) * position(0) + ray.origin(1)*position(1) + ray.origin(2)*position(2)));
+	
+	double discriminant = pow(B,2) - (4*A*C);
+
+	if(discriminant < 0)
+	{
+		return false;
+	}
+	else if(discriminant == 0)
+	{
+		double t = -B/(2 * A);
+		if(t >= 0)
+		{
+			Vector3d intersection = ray.origin + t * rayLine;
+			hit.position = intersection;
+			hit.normal = intersection.normalized();
+			hit.ray_param = t;
+			return true;
+		}
+		else 
+		{
+			return false;
+		}
+		
+	}
+	else
+	{
+		double t1 = (-B - sqrt(discriminant))/(2*A);
+		double t2 = (-B + sqrt(discriminant))/(2*A);
+
+		//Get shortest point
+		if(t1 < t2 && t1 >= 0)
+		{
+			Vector3d intersection = ray.origin + t1 * rayLine;
+			hit.position = intersection;
+			hit.normal = intersection.normalized();
+			hit.ray_param = t1;
+
+			return true;
+		}
+		else if(t2 < t1 && t2 >= 0)
+		{
+			Vector3d intersection = ray.origin + t2 * rayLine;
+			hit.position = intersection;
+			hit.normal = intersection.normalized();
+			hit.ray_param = t2;
+
+			return true;
+		}
+		else
+		{	
+			return false;
+		}
+	}
+}
 bool Parallelogram::intersect(const Ray &ray, Intersection &hit) {
 	// TODO (Assignment 2)
+
+
+	// Assume u and v are vectors from parallelogram origin, rather than actual origin
+	Vector3d A = origin;
+	Vector3d B = origin + u;
+	Vector3d C = origin + v;
+
+	Matrix3f matrixVar;
+
+	Vector3d ray_direction = ray.direction - ray.origin;
+
+	matrixVar << A(0)-C(0),A(0)-B(0),ray_direction(0),A(1)-C(1),A(1)-B(1),ray_direction(1),A(2)-C(2),A(2)-B(2),ray_direction(2);
+	
+	Vector3f solution;
+
+	solution << A(0)-ray.origin(0), A(1)-ray.origin(1), A(2)-ray.origin(2);
+
+	Vector3f result = matrixVar.colPivHouseholderQr().solve(solution);
+
+	if(result(0) <= 1 && result(1) <= 1 && result(0) >= 0 && result(1) >= 0 && result(2) >= 0)
+	{
+		Vector3d intersection = ray.origin + result(2) * ray_direction;
+		hit.position = intersection;
+		hit.normal = intersection.normalized();
+		hit.ray_param = result(2);
+		return true;
+	}
+
 	return false;
 }
 
@@ -206,18 +295,96 @@ bool Parallelogram::intersect(const Ray &ray, Intersection &hit) {
 
 bool intersect_triangle(const Ray &ray, const Vector3d &a, const Vector3d &b, const Vector3d &c, Intersection &hit) {
 	// TODO (Assignment 3)
-	//
+	// 
 	// Compute whether the ray intersects the given triangle.
 	// If you have done the parallelogram case, this should be very similar to it.
+
+	Vector3d A = a;
+	Vector3d B = b;
+	Vector3d C = c;
+
+	Matrix3f matrixVar;
+
+	Vector3d ray_direction = ray.direction - ray.origin;
+
+	matrixVar << A(0)-C(0),A(0)-B(0),ray_direction(0),A(1)-C(1),A(1)-B(1),ray_direction(1),A(2)-C(2),A(2)-B(2),ray_direction(2);
+	
+	Vector3f solution;
+
+	solution << A(0)-ray.origin(0), A(1)-ray.origin(1), A(2)-ray.origin(2);
+
+	Vector3f result = matrixVar.colPivHouseholderQr().solve(solution);
+
+	if(result(0) >= 0 && result(1) >= 0 && result(0)+result(1) <= 1 && result(2) > 0)
+	{
+		Vector3d intersection = ray.origin + result(2) * ray_direction;
+		hit.position = intersection;
+		hit.normal = intersection.normalized();
+		hit.ray_param = result(2);
+		return true;
+	}
 	return false;
 }
 
 bool intersect_box(const Ray &ray, const AlignedBox3d &box) {
 	// TODO (Assignment 3)
-	//
+	// 
 	// Compute whether the ray intersects the given box.
 	// There is no need to set the resulting normal and ray parameter, since
 	// we are not testing with the real surface here anyway.
+
+	Vector3d A = box.corner(box.BottomLeftFloor);
+	Vector3d B = box.corner(box.BottomRightFloor);
+	Vector3d C = box.corner(box.TopLeftFloor);
+	Vector3d D = box.corner(box.TopRightFloor);
+	Vector3d E = box.corner(box.BottomLeftCeil);
+	Vector3d F = box.corner(box.BottomRightCeil);
+	Vector3d G = box.corner(box.TopLeftCeil);
+	Vector3d H = box.corner(box.TopRightCeil);
+
+	Intersection temp;
+
+	Parallelogram planeOne;
+	planeOne.origin = A;
+	planeOne.u = B - A;
+	planeOne.v = C - A;
+	bool one = planeOne.intersect(ray,temp);
+
+	Parallelogram planeTwo;
+	planeTwo.origin = A;
+	planeTwo.u = E - A;
+	planeTwo.v = C - A;
+	bool two = planeTwo.intersect(ray,temp);
+
+	Parallelogram planeThree;
+	planeThree.origin = A;
+	planeThree.u = B - A;
+	planeThree.v = E - A;
+	bool three = planeThree.intersect(ray,temp);
+
+	Parallelogram planeFour;
+	planeFour.origin = H;
+	planeFour.u = G - H;
+	planeFour.v = D - H;
+	bool four = planeFour.intersect(ray,temp);
+
+	Parallelogram planeFive;
+	planeFive.origin = H;
+	planeFive.u = G - H;
+	planeFive.v = F - H;
+	bool five = planeFive.intersect(ray,temp);
+
+	Parallelogram planeSix; 
+	planeSix.origin = H;
+	planeSix.u = D - H;
+	planeSix.v = F - H;
+	bool six = planeSix.intersect(ray,temp);
+
+	if(one || two || three || four || five || six)
+	{
+		return true;
+	}
+
 	return false;
 }
 
@@ -225,6 +392,7 @@ bool Mesh::intersect(const Ray &ray, Intersection &closest_hit) {
 	// TODO (Assignment 3)
 
 	// Method (1): Traverse every triangle and return the closest hit.
+
 
 	// Method (2): Traverse the BVH tree and test the intersection with a
 	// triangles at the leaf nodes that intersects the input ray.
@@ -352,6 +520,9 @@ void render_scene(const Scene &scene) {
 			if (scene.camera.is_perspective) {
 				// Perspective camera
 				// TODO (Assignment 2, perspective camera)
+
+				//use an intersection point
+
 			} else {
 				// Orthographic camera
 				ray.origin = scene.camera.position + Vector3d(shift[0], shift[1], 0);
@@ -450,7 +621,27 @@ int main(int argc, char *argv[]) {
 		std::cerr << "Usage: " << argv[0] << " scene.json" << std::endl;
 		return 1;
 	}
+	
 	Scene scene = load_scene(argv[1]);
-	render_scene(scene);
+
+	std::cout << scene.objects << std::endl;
+	// render_scene(scene);
+
+	// Vector3d a(0,0,0);
+	// Vector3d b(1,0,5);
+	// Vector3d c(0,1,1);
+	// AlignedBox3d test = bbox_triangle(a,b,c);
+
+	// std::cout << "Max Corner: " << std::endl << test.max() << std::endl;
+
+	// std::cout << "Bottom Left Floor: " << std::endl << test.corner(test.BottomLeftFloor) << std::endl;
+	// std::cout << "Bottom Right Floor: " << std::endl << test.corner(test.BottomRightFloor) << std::endl;
+	// std::cout << "Top Left Floor: " << std::endl << test.corner(test.TopLeftFloor) << std::endl;
+	// std::cout << "Top Right Floor: " << std::endl << test.corner(test.TopRightFloor) << std::endl;
+	// std::cout << "Bottom Left Ceil: " << std::endl << test.corner(test.BottomLeftCeil) << std::endl;
+	// std::cout << "Bottom Right Ceil: " << std::endl << test.corner(test.BottomRightCeil) << std::endl;
+	// std::cout << "Top Left Ceil: " << std::endl << test.corner(test.TopLeftCeil) << std::endl;
+	// std::cout << "Top Right Ceil: " << std::endl << test.corner(test.TopRightCeil) << std::endl;
+
 	return 0;
 }

@@ -1,0 +1,10 @@
+1. Create bounding box around whole shape
+2. Take the half of the longest dimension
+3. Sort triangles according to longest dimension
+4. Take half of the sorted array, get two sets
+5. Do until get individual triangles
+
+Base Case: until no other can be divided
+
+Constructed a tree
+Once a ray is fired, to find intersection, loop through tree.
