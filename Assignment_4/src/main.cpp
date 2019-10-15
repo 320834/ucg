@@ -129,7 +129,7 @@ struct AABBTree {
 	std::vector<Node> nodes;
 	int root;
 
-	int recurseTree(std::vector<Triangle> &list, int nodeIndex, int parentIndex);
+	AlignedBox3d recurseTree(std::vector<Triangle> &list, int nodeIndex, int parentIndex);
 	AABBTree() = default; // Default empty constructor
 	AABBTree(const MatrixXd &V, const MatrixXi &F); // Build a BVH from an existing mesh
 };
@@ -206,7 +206,7 @@ bool sortVectorZ(Triangle &current, Triangle &other)
 
 
 // Bounding box of set of triangles
-int getBoundBox(std::vector<Triangle> &list, AlignedBox3d &box)
+int getBoundBox(std::vector<Triangle> &list)
 {
 	AlignedBox3d retBox;
 
@@ -273,26 +273,25 @@ int getBoundBox(std::vector<Triangle> &list, AlignedBox3d &box)
 	// retBox.extend(triMinZ.centroid);
 	// retBox.extend(triMaxZ.centroid);
 
-	retBox.extend(triMinX.A);
-	retBox.extend(triMinX.B);
-	retBox.extend(triMinX.C);
-	retBox.extend(triMaxX.A);
-	retBox.extend(triMaxX.B);
-	retBox.extend(triMaxX.C);
-	retBox.extend(triMinY.A);
-	retBox.extend(triMinY.B);
-	retBox.extend(triMinY.C);
-	retBox.extend(triMaxY.A);
-	retBox.extend(triMaxY.B);
-	retBox.extend(triMaxY.C);
-	retBox.extend(triMinZ.A);
-	retBox.extend(triMinZ.B);
-	retBox.extend(triMinZ.C);
-	retBox.extend(triMaxZ.A);
-	retBox.extend(triMaxZ.B);
-	retBox.extend(triMaxZ.C);
+	// retBox.extend(triMinX.A);
+	// retBox.extend(triMinX.B);
+	// retBox.extend(triMinX.C);
+	// retBox.extend(triMaxX.A);
+	// retBox.extend(triMaxX.B);
+	// retBox.extend(triMaxX.C);
+	// retBox.extend(triMinY.A);
+	// retBox.extend(triMinY.B);
+	// retBox.extend(triMinY.C);
+	// retBox.extend(triMaxY.A);
+	// retBox.extend(triMaxY.B);
+	// retBox.extend(triMaxY.C);
+	// retBox.extend(triMinZ.A);
+	// retBox.extend(triMinZ.B);
+	// retBox.extend(triMinZ.C);
+	// retBox.extend(triMaxZ.A);
+	// retBox.extend(triMaxZ.B);
+	// retBox.extend(triMaxZ.C);
 
-	box = retBox;
 
 	double xlen = maxX - minX;
 	double ylen = maxY - minY;
@@ -324,7 +323,7 @@ AlignedBox3d bbox_triangle(const Vector3d &a, const Vector3d &b, const Vector3d 
 	return box;
 }
 
-int AABBTree::recurseTree(std::vector<Triangle> &list, int nodeIndex, int parentIndex)
+AlignedBox3d AABBTree::recurseTree(std::vector<Triangle> &list, int nodeIndex, int parentIndex)
 {
 	Node newNode;
 
@@ -333,19 +332,20 @@ int AABBTree::recurseTree(std::vector<Triangle> &list, int nodeIndex, int parent
 	{
 		newNode.bbox = bbox_triangle(list[0].A, list[0].B, list[0].C);
 		newNode.parent = parentIndex;
-		newNode.left = -2;
-		newNode.right = -2;
+		newNode.left = -1;
+		newNode.right = -1;
 		newNode.triangle = list[0];
 
 		//Add to node vector
 		nodes[nodeIndex] = newNode;
 
-		return 0;
+		std::cout << "Found leaf, returning" << std::endl;
+		return bbox_triangle(list[0].A, list[0].B, list[0].C);
 	}
 
+	std::cout << "Found branch, divide more" << std::endl;
 	//Get bounding box and figure out longest dim
-	AlignedBox3d boundingBox;
-	int longestLength = getBoundBox(list, boundingBox);
+	int longestLength = getBoundBox(list);
 
 	//Sort according to which is the longest length
 	if(longestLength == 0)
@@ -380,8 +380,12 @@ int AABBTree::recurseTree(std::vector<Triangle> &list, int nodeIndex, int parent
 	}
 
 	//Do recursion on both 
-	recurseTree(left, (nodeIndex*2)+1 ,nodeIndex);
-	recurseTree(right, (nodeIndex*2)+2, nodeIndex);
+	AlignedBox3d leftBox = recurseTree(left, (nodeIndex*2)+1 ,nodeIndex);
+	AlignedBox3d rightBox = recurseTree(right, (nodeIndex*2)+2, nodeIndex);
+
+	AlignedBox3d boundingBox;
+	boundingBox.extend(leftBox);
+	boundingBox.extend(rightBox);
 
 	//Add information to current node
 	newNode.bbox = boundingBox;
@@ -393,7 +397,9 @@ int AABBTree::recurseTree(std::vector<Triangle> &list, int nodeIndex, int parent
 	newNode.left = (nodeIndex*2)+1;
 	newNode.right = (nodeIndex*2)+2;
 
-	return 0;
+	nodes[nodeIndex] = newNode;
+
+	return boundingBox;
 }
 
 AABBTree::AABBTree(const MatrixXd &V, const MatrixXi &F) {
@@ -407,40 +413,44 @@ AABBTree::AABBTree(const MatrixXd &V, const MatrixXi &F) {
 
 	std::vector<Triangle> vectorTriangle;
 
+	std::cout << "Start reading mesh file" << std::endl;
 	//Read from input and create a vector of triangles, triangle has centroid and sides
 	for (int i = 0; i < F.rows(); ++i) {
 		for (int k = 0; k < F.cols(); ++k) {
 
 			if(k == 0)
 			{
-				Vector3d a(V(F(i,k),0), V(F(i,k), 1), V(F(i,k), 2));
-				// std::cout << a << std::endl << std::endl;
-				A = a;
+				
+				A(0) = V(F(i,k),0);
+				A(1) = V(F(i,k),1);
+				A(2) =  V(F(i,k),2);
 			}
 			else if(k == 1)
 			{
-				Vector3d b(V(F(i,k),0), V(F(i,k), 1), V(F(i,k), 2));
-				// std::cout << b << std::endl;
-				B = b;
+				
+				B(0) = V(F(i,k),0);
+				B(1) = V(F(i,k),1);
+				B(2) =  V(F(i,k),2);
 			}
 			else if(k == 2)
 			{
-				Vector3d c(V(F(i,k),0), V(F(i,k), 1), V(F(i,k), 2));
-				// std::cout << c << std::endl;
-				C = c;
+				C(0) = V(F(i,k),0);
+				C(1) = V(F(i,k),1);
+				C(2) =  V(F(i,k),2);
 
 			}
 			centroids.row(i) += V.row(F(i, k));
 		}
 
-		Triangle newTri(A,B,C);
-		vectorTriangle.push_back(newTri);
+		// Triangle newTri(A,B,C);
+		// vectorTriangle.push_back(newTri);
 		// AlignedBox3d newBox = bbox_triangle(A,B,C);
 		// vectorCentroid.push_back(centroids.row(i) /= F.cols());
 		centroids.row(i) /= F.cols();
 	}
 
 
+	std::cout << "Finish reading mesh" << std::endl;
 	// TODO (Assignment 3)
 
 	// Method (1): Top-down approach.
@@ -451,13 +461,15 @@ AABBTree::AABBTree(const MatrixXd &V, const MatrixXi &F) {
 	//Do basical setup
 
 	int nodeLen = F.rows();
+
+	//set temp
 	Node temp;
 	for(int i = 0; i < (nodeLen*2)-1; i++)
 	{
 		nodes.push_back(temp);
 	}
 	root = 0;
-	recurseTree(vectorTriangle, 0, -1);
+	// recurseTree(vectorTriangle, 0, -1);
 
 
 	// Method (2): Bottom-up approach.
@@ -666,102 +678,104 @@ bool Mesh::intersect(const Ray &ray, Intersection &closest_hit) {
 	// TODO (Assignment 3)
 
 	// Method (1): Traverse every triangle and return the closest hit.
-	int maxLength = facets.rows();
+	// int maxLength = facets.rows();
 
-	Vector3d A;
-	Vector3d B;
-	Vector3d C;
+	// Vector3d A;
+	// Vector3d B;
+	// Vector3d C;
 
-	Intersection min_inter;
-	Vector3d temp(0,0,0);
-	min_inter.position = temp;
-	min_inter.ray_param = INT_MAX;
+	// Intersection min_inter;
+	// Vector3d temp(0,0,0);
+	// min_inter.position = temp;
+	// min_inter.ray_param = INT_MAX;
 
-	bool hit;
-	bool overallHit = false;
+	// bool hit;
+	// bool overallHit = false;
 
-	for(int i = 0; i < maxLength; i++)
-	{
-		for(int j = 0; j < 4; j++)
-		{
-			if(j == 0)
-			{
-				int index = facets(i,j);
-				Vector3d a(vertices(index,0),vertices(index,1),vertices(index,2));
-				A = a;
-			}
-			else if(j == 1)
-			{
-				int index = facets(i,j);
-				Vector3d b(vertices(index,0),vertices(index,1),vertices(index,2));
-				B = b;
-			}
-			else if(j == 2)
-			{
-				int index = facets(i,j);
-				Vector3d c(vertices(index,0),vertices(index,1),vertices(index,2));
-				C = c;
-			}
-		}
+	// for(int i = 0; i < maxLength; i++)
+	// {
+	// 	for(int j = 0; j < 4; j++)
+	// 	{
+	// 		if(j == 0)
+	// 		{
+	// 			int index = facets(i,j);
+	// 			Vector3d a(vertices(index,0),vertices(index,1),vertices(index,2));
+	// 			A = a;
+	// 		}
+	// 		else if(j == 1)
+	// 		{
+	// 			int index = facets(i,j);
+	// 			Vector3d b(vertices(index,0),vertices(index,1),vertices(index,2));
+	// 			B = b;
+	// 		}
+	// 		else if(j == 2)
+	// 		{
+	// 			int index = facets(i,j);
+	// 			Vector3d c(vertices(index,0),vertices(index,1),vertices(index,2));
+	// 			C = c;
+	// 		}
+	// 	}
 		
 		
-		hit = intersect_triangle(ray, A, B, C, closest_hit);
-		if(hit && min_inter.ray_param > closest_hit.ray_param)
-		{
-			min_inter = closest_hit;
-			std::cout << "Found hit" << std::endl;
-			overallHit = true;
-		}
-	}	
+	// 	hit = intersect_triangle(ray, A, B, C, closest_hit);
+	// 	if(hit && min_inter.ray_param > closest_hit.ray_param)
+	// 	{
+	// 		min_inter = closest_hit;
+	// 		std::cout << "Found hit" << std::endl;
+	// 		overallHit = true;
+	// 	}
+	// }	
 
 
 
-	closest_hit = min_inter;
-	return overallHit;
+	// closest_hit = min_inter;
+	// return overallHit;
+
+
 	// return hit;
 
 	// Method (2): Traverse the BVH tree and test the intersection with a
 	// triangles at the leaf nodes that intersects the input ray.
 
 	//Check if ray hits first box
-	// AlignedBox3d box = bvh.nodes[0].bbox;
-	// if(intersect_box(ray,box))
-	// {
-	// 	std::cout << "Hit Total box" << std::endl;
-	// 	int nodeIndex = 0;
-	// 	int left = bvh.nodes[0].left;
-	// 	int right = bvh.nodes[0].right;
-	// 	int maxLength = bvh.nodes.size();
+	AlignedBox3d box = bvh.nodes[0].bbox;
+	if(intersect_box(ray,box))
+	{
+		// std::cout << "Hit Total box" << std::endl;
+		int nodeIndex = 0;
+		int left = bvh.nodes[0].left;
+		int right = bvh.nodes[0].right;
+		int maxLength = bvh.nodes.size();
 
-	// 	while(nodeIndex < maxLength)
-	// 	{
-	// 		if(&bvh.nodes[nodeIndex].triangle != NULL)
-	// 		{
-	// 			break;
-	// 		}
+		while(nodeIndex < maxLength)
+		{
+			if(&bvh.nodes[nodeIndex].triangle != NULL)
+			{
+				break;
+			}
 
-	// 		AlignedBox3d leftBox = bvh.nodes[left].bbox;
-	// 		AlignedBox3d rightBox = bvh.nodes[right].bbox;
-	// 		if(intersect_box(ray, leftBox))
-	// 		{
-	// 			nodeIndex = left;
+			AlignedBox3d leftBox = bvh.nodes[left].bbox;
+			AlignedBox3d rightBox = bvh.nodes[right].bbox;
+			if(intersect_box(ray, leftBox))
+			{
+				nodeIndex = left;
 
-	// 			int left = bvh.nodes[nodeIndex].left;
-	// 			int right = bvh.nodes[nodeIndex].right;
-	// 		}
-	// 		else if(intersect_box(ray, rightBox))
-	// 		{
-	// 			nodeIndex = right;
+				int left = bvh.nodes[nodeIndex].left;
+				int right = bvh.nodes[nodeIndex].right;
+			}
+			else if(intersect_box(ray, rightBox))
+			{
+				nodeIndex = right;
 
-	// 			int left = bvh.nodes[nodeIndex].left;
-	// 			int right = bvh.nodes[nodeIndex].right;
-	// 		}
-	// 	}
+				int left = bvh.nodes[nodeIndex].left;
+				int right = bvh.nodes[nodeIndex].right;
+			}
+		}
 
-	// 	Triangle hitTri = bvh.nodes[nodeIndex].triangle;
+		Triangle hitTri = bvh.nodes[nodeIndex].triangle;
 
-	// 	return intersect_triangle(ray,hitTri.A, hitTri.B, hitTri.C, closest_hit);
-	// }
+		return intersect_triangle(ray,hitTri.A, hitTri.B, hitTri.C, closest_hit);
+	}
 
 
 	// return false;
@@ -872,7 +886,8 @@ void render_scene(const Scene &scene) {
 	// The pixel grid through which we shoot rays is at a distance 'focal_length'
 	// from the sensor, and is scaled from the canonical [-1,1] in order
 	// to produce the target field of view.
-	Vector3d grid_origin(-scale_x, scale_y, -scene.camera.focal_length);
+	//Original: Vector3d grid_origin(-scale_x, scale_y, -scene.camera.focal_length);
+	Vector3d grid_origin(-0.5, scale_y, 1);
 	Vector3d x_displacement(2.0/w*scale_x, 0, 0);
 	Vector3d y_displacement(0, -2.0/h*scale_y, 0);
 
@@ -886,9 +901,12 @@ void render_scene(const Scene &scene) {
 			// Prepare the ray
 			Ray ray;
 
+
 			if (scene.camera.is_perspective) {
 				// Perspective camera
 				// TODO (Assignment 2, perspective camera)
+				ray.origin = scene.camera.position;
+				ray.direction = shift;
 
 				//use an intersection point
 
@@ -898,8 +916,19 @@ void render_scene(const Scene &scene) {
 				ray.direction = Vector3d(0, 0, -1);
 			}
 
+			Intersection hit;
+
+			std::shared_ptr<Mesh> sceneMesh = std::dynamic_pointer_cast<Mesh>(scene.objects.at(0));
+			
+			Vector3d C(0,0,0);
+			if(sceneMesh->intersect(ray,hit))
+			{
+				
+				C = hit.position;
+			}
+
 			int max_bounce = 5;
-			Vector3d C = shoot_ray(scene, ray, max_bounce);
+			// Vector3d C = shoot_ray(scene, ray, max_bounce);
 			R(i, j) = C(0);
 			G(i, j) = C(1);
 			B(i, j) = C(2);
@@ -997,16 +1026,25 @@ int main(int argc, char *argv[]) {
 	Scene scene = load_scene(argv[1]);
 	// render_scene(scene);
 
-	Vector3d origin(0.5,0.5,10);
-	Vector3d direction(0.5,0.45,9);
-	Ray ray;
-	ray.origin = origin;
-	ray.direction = direction;
+	// std::shared_ptr<Mesh> test = std::dynamic_pointer_cast<Mesh>(scene.objects.at(0));
+	
+	// std::cout << test->facets << std::endl;
 
-	Intersection hit;
+	// std::cout << scene.objects.at(0)->material.diffuse_color << std::endl;
+	// std::cout << std::dynamic_pointer_cast<Mesh>(scene.objects.at(0))->facets << std::endl;
 
-	std::cout << meshObj.intersect(ray, hit) << std::endl;
-	std::cout << hit.position << std::endl;
+	// std::cout << meshObj.bvh.nodes[0].left << std::endl;
+
+	// Vector3d origin(0.5,0.5,10);
+	// Vector3d direction(0.5,0.5,9);
+	// Ray ray;
+	// ray.origin = origin;
+	// ray.direction = direction;
+
+	// Intersection hit;
+
+	// std::cout << meshObj.intersect(ray, hit) << std::endl;
+	// std::cout << hit.position << std::endl;
 
 	return 0;
 }

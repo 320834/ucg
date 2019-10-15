@@ -8,7 +8,7 @@
 	"Camera":
 	{
 		"IsPerspective": true,
-		"Position": [0, 0, 2],
+		"Position": [5, -6, 40],
 		"FieldOfView": 0.7854,
 		"FocalLength": 2.0,
 		"LensRadius": 0.08
@@ -58,7 +58,7 @@
 		{
 			"Type": "Mesh",
 			"Material": 0,
-			"Path": "cube.off"
+			"Path": "rabbit.off"
 		},
 		{
 			"Type": "Sphere",
