@@ -208,14 +208,6 @@ bool sortVectorZ(Triangle &current, Triangle &other)
 // Bounding box of set of triangles
 int getBoundBox(std::vector<Triangle> &list)
 {
-	AlignedBox3d retBox;
-
-	Triangle triMinX;
-	Triangle triMaxX;
-	Triangle triMinY;
-	Triangle triMaxY;
-	Triangle triMinZ;
-	Triangle triMaxZ;
 
 	double minX = INT_MAX;
 	double maxX = INT_MIN;
@@ -231,37 +223,37 @@ int getBoundBox(std::vector<Triangle> &list)
 		if(list[i].centroid(0) < minX)
 		{
 			minX = list[i].centroid(0);
-			triMinX = list[i];
+			// triMinX = list[i];
 		}
 		
 		if(list[i].centroid(0) > maxX)
 		{
 			maxX = list[i].centroid(0);
-			triMaxX = list[i];
+			// triMaxX = list[i];
 		}
 
 		if(list[i].centroid(1) < minY)
 		{
 			minY = list[i].centroid(1);
-			triMinY = list[i];
+			// triMinY = list[i];
 		}
 
 		if(list[i].centroid(1) > maxY)
 		{
 			maxY = list[i].centroid(1);
-			triMaxY = list[i];
+			// triMaxY = list[i];
 		}
 
 		if(list[i].centroid(2) < minZ)
 		{
 			minZ = list[i].centroid(2);
-			triMinZ = list[i];
+			// triMinZ = list[i];
 		}
 
 		if(list[i].centroid(2) > maxZ)
 		{
 			maxZ = list[i].centroid(2);
-			triMaxZ = list[i];
+			// triMaxZ = list[i];
 		}
 
 	}
@@ -310,7 +302,7 @@ int getBoundBox(std::vector<Triangle> &list)
 		return 2;
 	}
 
-
+	return -1;
 
 }
 
@@ -327,9 +319,12 @@ AlignedBox3d AABBTree::recurseTree(std::vector<Triangle> &list, int nodeIndex, i
 {
 	Node newNode;
 
+	// std::cout << list.size() << std::endl;
+
 	//Base case
 	if(list.size() == 1)
 	{
+		// std::cout << "Found leaf, returning" << std::endl;
 		newNode.bbox = bbox_triangle(list[0].A, list[0].B, list[0].C);
 		newNode.parent = parentIndex;
 		newNode.left = -1;
@@ -339,12 +334,21 @@ AlignedBox3d AABBTree::recurseTree(std::vector<Triangle> &list, int nodeIndex, i
 		//Add to node vector
 		nodes[nodeIndex] = newNode;
 
-		std::cout << "Found leaf, returning" << std::endl;
+		// std::cout << "Found leaf, returning" << std::endl;
 		return bbox_triangle(list[0].A, list[0].B, list[0].C);
 	}
+	else if(list.size() == 0)
+	{
+		Vector3d min(0,0,0);
+		Vector3d max(0,0,0);
 
-	std::cout << "Found branch, divide more" << std::endl;
+		// std::cout << "Error somehow list is 0" << std::endl;
+		return AlignedBox3d(min,max);
+	}
+
 	//Get bounding box and figure out longest dim
+
+	
 	int longestLength = getBoundBox(list);
 
 	//Sort according to which is the longest length
@@ -360,6 +364,8 @@ AlignedBox3d AABBTree::recurseTree(std::vector<Triangle> &list, int nodeIndex, i
 	{
 		std::sort(list.begin(), list.end(), &sortVectorZ);
 	}
+
+	// std::cout << "After sorting" << std::endl;
 
 	//Divide the sorted array into two and get two seperate arrays
 	int dividePoint = list.size()/2;
@@ -379,9 +385,13 @@ AlignedBox3d AABBTree::recurseTree(std::vector<Triangle> &list, int nodeIndex, i
 		}
 	}
 
+	// std::cout << "Before recursion" << std::endl;
+
 	//Do recursion on both 
 	AlignedBox3d leftBox = recurseTree(left, (nodeIndex*2)+1 ,nodeIndex);
 	AlignedBox3d rightBox = recurseTree(right, (nodeIndex*2)+2, nodeIndex);
+
+	// std::cout << "After recursion" << std::endl;
 
 	AlignedBox3d boundingBox;
 	boundingBox.extend(leftBox);
@@ -442,8 +452,8 @@ AABBTree::AABBTree(const MatrixXd &V, const MatrixXi &F) {
 			centroids.row(i) += V.row(F(i, k));
 		}
 
-		// Triangle newTri(A,B,C);
-		// vectorTriangle.push_back(newTri);
+		Triangle newTri(A,B,C);
+		vectorTriangle.push_back(newTri);
 		// AlignedBox3d newBox = bbox_triangle(A,B,C);
 		// vectorCentroid.push_back(centroids.row(i) /= F.cols());
 		centroids.row(i) /= F.cols();
@@ -469,8 +479,13 @@ AABBTree::AABBTree(const MatrixXd &V, const MatrixXi &F) {
 		nodes.push_back(temp);
 	}
 	root = 0;
-	// recurseTree(vectorTriangle, 0, -1);
 
+	// std::cout << vectorTriangle.size() << std::endl;
+	// std::cout << nodes.size() << std::endl;
+
+	recurseTree(vectorTriangle, 0, -1);
+
+	std::cout << "Finish building tree" << std::endl;
 
 	// Method (2): Bottom-up approach.
 	// Merge nodes 2 by 2, starting from the leaves of the forest, until only 1 tree is left.
@@ -731,13 +746,12 @@ bool Mesh::intersect(const Ray &ray, Intersection &closest_hit) {
 	// closest_hit = min_inter;
 	// return overallHit;
 
-
-	// return hit;
-
 	// Method (2): Traverse the BVH tree and test the intersection with a
 	// triangles at the leaf nodes that intersects the input ray.
 
 	//Check if ray hits first box
+
+
 	AlignedBox3d box = bvh.nodes[0].bbox;
 	if(intersect_box(ray,box))
 	{
@@ -749,26 +763,30 @@ bool Mesh::intersect(const Ray &ray, Intersection &closest_hit) {
 
 		while(nodeIndex < maxLength)
 		{
-			if(&bvh.nodes[nodeIndex].triangle != NULL)
+			if(bvh.nodes[nodeIndex].left == -1 && bvh.nodes[nodeIndex].right == -1)
 			{
+				std::cout << "Found leaf at " << nodeIndex << std::endl;
 				break;
 			}
-
-			AlignedBox3d leftBox = bvh.nodes[left].bbox;
-			AlignedBox3d rightBox = bvh.nodes[right].bbox;
-			if(intersect_box(ray, leftBox))
+			else 
 			{
-				nodeIndex = left;
 
-				int left = bvh.nodes[nodeIndex].left;
-				int right = bvh.nodes[nodeIndex].right;
-			}
-			else if(intersect_box(ray, rightBox))
-			{
-				nodeIndex = right;
+				AlignedBox3d leftBox = bvh.nodes[left].bbox;
+				AlignedBox3d rightBox = bvh.nodes[right].bbox;
+				if(intersect_box(ray, leftBox))
+				{
+					nodeIndex = left;
 
-				int left = bvh.nodes[nodeIndex].left;
-				int right = bvh.nodes[nodeIndex].right;
+					int left = bvh.nodes[nodeIndex].left;
+					int right = bvh.nodes[nodeIndex].right;
+				}
+				else if(intersect_box(ray, rightBox))
+				{
+					nodeIndex = right;
+
+					int left = bvh.nodes[nodeIndex].left;
+					int right = bvh.nodes[nodeIndex].right;
+				}
 			}
 		}
 
@@ -778,7 +796,7 @@ bool Mesh::intersect(const Ray &ray, Intersection &closest_hit) {
 	}
 
 
-	// return false;
+	return false;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -924,7 +942,15 @@ void render_scene(const Scene &scene) {
 			if(sceneMesh->intersect(ray,hit))
 			{
 				
-				C = hit.position;
+				C(0) = 1;
+				C(1) = 0;
+				C(2) = 0;
+			}
+			else 
+			{
+				C(0) = 0;
+				C(0) = 0;
+				C(0) = 0;
 			}
 
 			int max_bounce = 5;
@@ -1004,7 +1030,7 @@ Scene load_scene(const std::string &filename) {
 			// Load mesh from a file
 			std::string filename = std::string(DATA_DIR) + entry["Path"].get<std::string>();
 			object = std::make_shared<Mesh>(filename);
-			meshObj = Mesh(filename);
+			// meshObj = Mesh(filename);
 			// std::cout << object.facets << std::endl;
 
 		}
@@ -1024,7 +1050,7 @@ int main(int argc, char *argv[]) {
 	}
 	
 	Scene scene = load_scene(argv[1]);
-	// render_scene(scene);
+	render_scene(scene);
 
 	// std::shared_ptr<Mesh> test = std::dynamic_pointer_cast<Mesh>(scene.objects.at(0));
 	
