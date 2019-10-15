@@ -4,13 +4,13 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_CXX
-  "/home/panda/Desktop/Computer Graphics/ucg/Assignment_4/src/main.cpp" "/home/panda/Desktop/Computer Graphics/ucg/Assignment_4/build/CMakeFiles/assignment4.dir/src/main.cpp.o"
+  "/home/panda/Desktop/Repository/ucg/Assignment_4/src/main.cpp" "/home/panda/Desktop/Repository/ucg/Assignment_4/build/CMakeFiles/assignment4.dir/src/main.cpp.o"
   )
 set(CMAKE_CXX_COMPILER_ID "GNU")
 
 # Preprocessor definitions for this target.
 set(CMAKE_TARGET_DEFINITIONS_CXX
-  "DATA_DIR=\"/home/panda/Desktop/Computer Graphics/ucg/Assignment_4/data/\""
+  "DATA_DIR=\"/home/panda/Desktop/Repository/ucg/Assignment_4/data/\""
   )
 
 # The include file search paths:

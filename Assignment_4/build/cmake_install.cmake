@@ -1,4 +1,4 @@
-# Install script for directory: /home/panda/Desktop/Computer Graphics/ucg/Assignment_4
+# Install script for directory: /home/panda/Desktop/Repository/ucg/Assignment_4
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -45,5 +45,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/home/panda/Desktop/Computer Graphics/ucg/Assignment_4/build/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/home/panda/Desktop/Repository/ucg/Assignment_4/build/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

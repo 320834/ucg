@@ -1,3 +1,3 @@
-/home/panda/Desktop/Computer Graphics/ucg/Assignment_4/build/CMakeFiles/rebuild_cache.dir
-/home/panda/Desktop/Computer Graphics/ucg/Assignment_4/build/CMakeFiles/assignment4.dir
-/home/panda/Desktop/Computer Graphics/ucg/Assignment_4/build/CMakeFiles/edit_cache.dir
+/home/panda/Desktop/Repository/ucg/Assignment_4/build/CMakeFiles/rebuild_cache.dir
+/home/panda/Desktop/Repository/ucg/Assignment_4/build/CMakeFiles/assignment4.dir
+/home/panda/Desktop/Repository/ucg/Assignment_4/build/CMakeFiles/edit_cache.dir

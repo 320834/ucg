@@ -4,7 +4,7 @@
 # compile CXX with /usr/bin/c++
 CXX_FLAGS = -O3 -DNDEBUG   -std=gnu++11
 
-CXX_DEFINES = -DDATA_DIR="\"/home/panda/Desktop/Computer Graphics/ucg/Assignment_4/data/\""
+CXX_DEFINES = -DDATA_DIR=\"/home/panda/Desktop/Repository/ucg/Assignment_4/data/\"
 
-CXX_INCLUDES = -isystem "/home/panda/Desktop/Computer Graphics/ucg/Assignment_4/../ext/eigen" 
+CXX_INCLUDES = -isystem /home/panda/Desktop/Repository/ucg/Assignment_4/../ext/eigen 
 
