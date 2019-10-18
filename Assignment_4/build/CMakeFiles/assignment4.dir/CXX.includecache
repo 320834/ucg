@@ -1066,7 +1066,7 @@ lapacke_mangling.h
 
 ../../ext/eigen/Eigen/src/plugins/MatrixCwiseUnaryOps.h
 
-/home/panda/Desktop/Graphics/ucg/Assignment_4/src/json.hpp
+/home/panda/Desktop/Repository/ucg/Assignment_4/src/json.hpp
 algorithm
 -
 array
@@ -1122,7 +1122,7 @@ utility
 vector
 -
 
-/home/panda/Desktop/Graphics/ucg/Assignment_4/src/main.cpp
+/home/panda/Desktop/Repository/ucg/Assignment_4/src/main.cpp
 fstream
 -
 iostream
@@ -1142,13 +1142,13 @@ Eigen/Dense
 Eigen/Geometry
 -
 stb_image_write.h
-/home/panda/Desktop/Graphics/ucg/Assignment_4/src/stb_image_write.h
+/home/panda/Desktop/Repository/ucg/Assignment_4/src/stb_image_write.h
 utils.h
-/home/panda/Desktop/Graphics/ucg/Assignment_4/src/utils.h
+/home/panda/Desktop/Repository/ucg/Assignment_4/src/utils.h
 json.hpp
-/home/panda/Desktop/Graphics/ucg/Assignment_4/src/json.hpp
+/home/panda/Desktop/Repository/ucg/Assignment_4/src/json.hpp
 
-/home/panda/Desktop/Graphics/ucg/Assignment_4/src/stb_image_write.h
+/home/panda/Desktop/Repository/ucg/Assignment_4/src/stb_image_write.h
 stdio.h
 -
 stdarg.h
@@ -1162,7 +1162,7 @@ math.h
 assert.h
 -
 
-/home/panda/Desktop/Graphics/ucg/Assignment_4/src/utils.h
+/home/panda/Desktop/Repository/ucg/Assignment_4/src/utils.h
 Eigen/Dense
 -
 algorithm
