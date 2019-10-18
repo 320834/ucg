@@ -258,33 +258,6 @@ int getBoundBox(std::vector<Triangle> &list)
 
 	}
 
-	// retBox.extend(triMinX.centroid);
-	// retBox.extend(triMaxX.centroid);
-	// retBox.extend(triMinY.centroid);
-	// retBox.extend(triMaxY.centroid);
-	// retBox.extend(triMinZ.centroid);
-	// retBox.extend(triMaxZ.centroid);
-
-	// retBox.extend(triMinX.A);
-	// retBox.extend(triMinX.B);
-	// retBox.extend(triMinX.C);
-	// retBox.extend(triMaxX.A);
-	// retBox.extend(triMaxX.B);
-	// retBox.extend(triMaxX.C);
-	// retBox.extend(triMinY.A);
-	// retBox.extend(triMinY.B);
-	// retBox.extend(triMinY.C);
-	// retBox.extend(triMaxY.A);
-	// retBox.extend(triMaxY.B);
-	// retBox.extend(triMaxY.C);
-	// retBox.extend(triMinZ.A);
-	// retBox.extend(triMinZ.B);
-	// retBox.extend(triMinZ.C);
-	// retBox.extend(triMaxZ.A);
-	// retBox.extend(triMaxZ.B);
-	// retBox.extend(triMaxZ.C);
-
-
 	double xlen = maxX - minX;
 	double ylen = maxY - minY;
 	double zlen = maxZ - minZ;
@@ -335,15 +308,7 @@ AlignedBox3d AABBTree::recurseTree(std::vector<Triangle> &list, int nodeIndex, i
 		nodes[nodeIndex] = newNode;
 
 		// std::cout << "Found leaf, returning" << std::endl;
-		return bbox_triangle(list[0].A, list[0].B, list[0].C);
-	}
-	else if(list.size() == 0)
-	{
-		Vector3d min(0,0,0);
-		Vector3d max(0,0,0);
-
-		// std::cout << "Error somehow list is 0" << std::endl;
-		return AlignedBox3d(min,max);
+		return newNode.bbox;
 	}
 
 	//Get bounding box and figure out longest dim
@@ -565,8 +530,8 @@ bool Parallelogram::intersect(const Ray &ray, Intersection &hit) {
 
 	// Assume u and v are vectors from parallelogram origin, rather than actual origin
 	Vector3d A = origin;
-	Vector3d B = origin + u;
-	Vector3d C = origin + v;
+	Vector3d B = u;
+	Vector3d C = v;
 
 	Matrix3f matrixVar;
 
@@ -618,6 +583,7 @@ bool intersect_triangle(const Ray &ray, const Vector3d &a, const Vector3d &b, co
 
 	if(result(0) >= 0 && result(1) >= 0 && result(0)+result(1) <= 1 && result(2) > 0)
 	{
+		// std::cout << "Found triangle hit"
 		Vector3d intersection = ray.origin + result(2) * ray_direction;
 		hit.position = intersection;
 		hit.normal = intersection.normalized();
@@ -647,38 +613,38 @@ bool intersect_box(const Ray &ray, const AlignedBox3d &box) {
 
 	Parallelogram planeOne;
 	planeOne.origin = A;
-	planeOne.u = B - A;
-	planeOne.v = C - A;
+	planeOne.u = B;
+	planeOne.v = C;
 	bool one = planeOne.intersect(ray,temp);
 
 	Parallelogram planeTwo;
 	planeTwo.origin = A;
-	planeTwo.u = E - A;
-	planeTwo.v = C - A;
+	planeTwo.u = E;
+	planeTwo.v = C;
 	bool two = planeTwo.intersect(ray,temp);
 
 	Parallelogram planeThree;
 	planeThree.origin = A;
-	planeThree.u = B - A;
-	planeThree.v = E - A;
+	planeThree.u = B;
+	planeThree.v = E;
 	bool three = planeThree.intersect(ray,temp);
 
 	Parallelogram planeFour;
 	planeFour.origin = H;
-	planeFour.u = G - H;
-	planeFour.v = D - H;
+	planeFour.u = G;
+	planeFour.v = D;
 	bool four = planeFour.intersect(ray,temp);
 
 	Parallelogram planeFive;
 	planeFive.origin = H;
-	planeFive.u = G - H;
-	planeFive.v = F - H;
+	planeFive.u = G;
+	planeFive.v = F;
 	bool five = planeFive.intersect(ray,temp);
 
 	Parallelogram planeSix; 
 	planeSix.origin = H;
-	planeSix.u = D - H;
-	planeSix.v = F - H;
+	planeSix.u = D;
+	planeSix.v = F;
 	bool six = planeSix.intersect(ray,temp);
 
 	if(one || two || three || four || five || six)
@@ -689,112 +655,138 @@ bool intersect_box(const Ray &ray, const AlignedBox3d &box) {
 	return false;
 }
 
+int d = 1;
 bool Mesh::intersect(const Ray &ray, Intersection &closest_hit) {
 	// TODO (Assignment 3)
 
 	// Method (1): Traverse every triangle and return the closest hit.
-	// int maxLength = facets.rows();
 
-	// Vector3d A;
-	// Vector3d B;
-	// Vector3d C;
+	if(d == 0)
+	{
+		int maxLength = facets.rows();
 
-	// Intersection min_inter;
-	// Vector3d temp(0,0,0);
-	// min_inter.position = temp;
-	// min_inter.ray_param = INT_MAX;
+		Vector3d A;
+		Vector3d B;
+		Vector3d C;
 
-	// bool hit;
-	// bool overallHit = false;
+		Intersection min_inter;
+		Vector3d temp(0,0,0);
+		min_inter.position = temp;
+		min_inter.ray_param = INT_MAX;
 
-	// for(int i = 0; i < maxLength; i++)
-	// {
-	// 	for(int j = 0; j < 4; j++)
-	// 	{
-	// 		if(j == 0)
-	// 		{
-	// 			int index = facets(i,j);
-	// 			Vector3d a(vertices(index,0),vertices(index,1),vertices(index,2));
-	// 			A = a;
-	// 		}
-	// 		else if(j == 1)
-	// 		{
-	// 			int index = facets(i,j);
-	// 			Vector3d b(vertices(index,0),vertices(index,1),vertices(index,2));
-	// 			B = b;
-	// 		}
-	// 		else if(j == 2)
-	// 		{
-	// 			int index = facets(i,j);
-	// 			Vector3d c(vertices(index,0),vertices(index,1),vertices(index,2));
-	// 			C = c;
-	// 		}
-	// 	}
-		
-		
-	// 	hit = intersect_triangle(ray, A, B, C, closest_hit);
-	// 	if(hit && min_inter.ray_param > closest_hit.ray_param)
-	// 	{
-	// 		min_inter = closest_hit;
-	// 		std::cout << "Found hit" << std::endl;
-	// 		overallHit = true;
-	// 	}
-	// }	
+		bool hit;
+		bool overallHit = false;
 
+		for(int i = 0; i < maxLength; i++)
+		{
+			for(int j = 0; j < 4; j++)
+			{
+				if(j == 0)
+				{
+					int index = facets(i,j);
+					Vector3d a(vertices(index,0),vertices(index,1),vertices(index,2));
+					A = a;
+				}
+				else if(j == 1)
+				{
+					int index = facets(i,j);
+					Vector3d b(vertices(index,0),vertices(index,1),vertices(index,2));
+					B = b;
+				}
+				else if(j == 2)
+				{
+					int index = facets(i,j);
+					Vector3d c(vertices(index,0),vertices(index,1),vertices(index,2));
+					C = c;
+				}
+			}
+			
+			
+			hit = intersect_triangle(ray, A, B, C, closest_hit);
+			if(hit && min_inter.ray_param > closest_hit.ray_param)
+			{
+				min_inter = closest_hit;
+				// std::cout << "Found hit" << std::endl;
+				overallHit = true;
+			}
+		}	
 
-
-	// closest_hit = min_inter;
-	// return overallHit;
+		closest_hit = min_inter;
+		return overallHit;
+	}
 
 	// Method (2): Traverse the BVH tree and test the intersection with a
 	// triangles at the leaf nodes that intersects the input ray.
 
 	//Check if ray hits first box
 
-
-	AlignedBox3d box = bvh.nodes[0].bbox;
-	if(intersect_box(ray,box))
+	if(d == 1)
 	{
+		AlignedBox3d box = bvh.nodes[0].bbox;
+
 		// std::cout << "Hit Total box" << std::endl;
 		int nodeIndex = 0;
-		int left = bvh.nodes[0].left;
-		int right = bvh.nodes[0].right;
 		int maxLength = bvh.nodes.size();
+		int left = bvh.nodes[nodeIndex].left;
+		int right = bvh.nodes[nodeIndex].right; 
 
-		while(nodeIndex < maxLength)
+		while(nodeIndex < maxLength && intersect_box(ray,box))
 		{
+			// std::cout << "Node Index " << nodeIndex << std::endl;
+			left = bvh.nodes[nodeIndex].left;
+			right = bvh.nodes[nodeIndex].right;
+
 			if(bvh.nodes[nodeIndex].left == -1 && bvh.nodes[nodeIndex].right == -1)
 			{
-				std::cout << "Found leaf at " << nodeIndex << std::endl;
-				break;
+				Triangle hitTri = bvh.nodes[nodeIndex].triangle;
+				return intersect_triangle(ray,hitTri.A, hitTri.B, hitTri.C, closest_hit);
 			}
 			else 
 			{
-
+				// std::cout << "Found branch at " << nodeIndex << std::endl;
 				AlignedBox3d leftBox = bvh.nodes[left].bbox;
 				AlignedBox3d rightBox = bvh.nodes[right].bbox;
+
+				bool leftBol = false;
+				bool rightBol = false;
+
 				if(intersect_box(ray, leftBox))
 				{
-					nodeIndex = left;
-
-					int left = bvh.nodes[nodeIndex].left;
-					int right = bvh.nodes[nodeIndex].right;
+					
+					leftBol = true;
 				}
-				else if(intersect_box(ray, rightBox))
+				
+				if(intersect_box(ray, rightBox))
 				{
+					// std::cout << "Intersect left at " << nodeIndex << std::endl;
 					nodeIndex = right;
-
-					int left = bvh.nodes[nodeIndex].left;
-					int right = bvh.nodes[nodeIndex].right;
+					box = rightBox;
+					rightBol = true;
 				}
+
+
+				if(leftBol && rightBol)
+				{
+					//If hit twice, take the one closest to array.
+					std::cout << "Error somehow ray has hit two boxes" << std::endl;
+				}
+				
+				if(!leftBol && !rightBol)
+				{
+					nodeIndex = maxLength;
+
+					// std::cout << "No box intersect, This is an error " << std::endl;
+				}
+
+				leftBol = false;
+				rightBol = false;
 			}
 		}
 
-		Triangle hitTri = bvh.nodes[nodeIndex].triangle;
+			
 
-		return intersect_triangle(ray,hitTri.A, hitTri.B, hitTri.C, closest_hit);
+			return false;
 	}
-
 
 	return false;
 }
@@ -1056,7 +1048,22 @@ int main(int argc, char *argv[]) {
 	
 	// std::cout << test->facets << std::endl;
 
-	// std::cout << scene.objects.at(0)->material.diffuse_color << std::endl;
+	// std::shared_ptr<Mesh> sceneMesh = std::dynamic_pointer_cast<Mesh>(scene.objects.at(0));
+
+	// std::cout << sceneMesh->bvh.nodes.size() << std::endl;
+
+	// std::cout << sceneMesh->bvh.nodes[22].bbox.max() << std::endl;
+	// std::cout << sceneMesh->bvh.nodes[22].bbox.min() << std::endl;
+
+	// std::cout << std::endl;
+
+	// std::cout << sceneMesh->bvh.nodes[3].bbox.max() << std::endl;
+	// std::cout << sceneMesh->bvh.nodes[3].bbox.min() << std::endl;
+
+	// std::cout << std::endl;
+
+	// std::cout << sceneMesh->bvh.nodes[4].bbox.max() << std::endl;
+	// std::cout << sceneMesh->bvh.nodes[4].bbox.min() << std::endl;
 	// std::cout << std::dynamic_pointer_cast<Mesh>(scene.objects.at(0))->facets << std::endl;
 
 	// std::cout << meshObj.bvh.nodes[0].left << std::endl;
