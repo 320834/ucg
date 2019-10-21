@@ -1,0 +1,124 @@
+AlignedBox3d box = bvh.nodes[0].bbox;
+
+
+int nodeIndex = 0;
+int maxLength = bvh.nodes.size();
+int left = bvh.nodes[nodeIndex].left;
+int right = bvh.nodes[nodeIndex].right; 
+
+Intersection wholeIntersect;
+
+while(nodeIndex < maxLength && intersect_box(ray,box, wholeIntersect))
+{
+    // if(nodeIndex == 0)
+    // {
+    // 	std::cout << "Hit Total box" << std::endl;
+    
+    // }
+    // else 
+    // {
+    // 	std::cout << "Hit Box in Node " << nodeIndex << std::endl;
+
+    // }
+    
+    left = bvh.nodes[nodeIndex].left;
+    right = bvh.nodes[nodeIndex].right;
+
+    if(bvh.nodes[nodeIndex].left == -1 && bvh.nodes[nodeIndex].right == -1)
+    {
+        Triangle hitTri = bvh.nodes[nodeIndex].triangle;
+        // std::cout << "Found triangle at leaf" << std::endl;
+        // std::cout << hitTri.A << std::endl;
+        // std::cout << hitTri.B << std::endl;
+        // std::cout << hitTri.C << std::endl;
+
+
+        return intersect_triangle(ray,hitTri.A, hitTri.B, hitTri.C, closest_hit, nodeIndex);
+    }
+    else 
+    {
+        // std::cout << "Found branch at " << nodeIndex << std::endl;
+        AlignedBox3d leftBox = bvh.nodes[left].bbox;
+        AlignedBox3d rightBox = bvh.nodes[right].bbox;
+
+        bool leftBol = false;
+        bool rightBol = false;
+
+        Intersection leftIntersect;
+        Intersection rightIntersect;
+
+        if(intersect_box(ray, leftBox, leftIntersect))
+        {
+            nodeIndex = left;
+            box = leftBox;
+            leftBol = true;
+        }
+
+        if(intersect_box(ray, rightBox, rightIntersect))
+        {
+            // std::cout << "Intersect left at " << nodeIndex << std::endl;
+            nodeIndex = right;
+            box = rightBox;
+            rightBol = true;
+        }
+
+        
+        
+        if(leftBol && rightBol)
+        {
+            //If hit twice, take the one closest to array.
+            double leftDis = (leftIntersect.position - ray.origin).norm();
+            double rightDis = (rightIntersect.position - ray.origin).norm();
+
+            std::cout << "Hit Two Boxes" << std::endl;
+
+            if(leftDis > rightDis)
+            {
+                nodeIndex = right;
+                box = rightBox;
+            }
+            else
+            {
+                nodeIndex = left;
+                box = leftBox;
+            }
+
+            
+        }
+        
+        if(!leftBol && !rightBol)
+        {
+            // Go back through parents 
+            // int parentIndex = bvh.nodes[nodeIndex].parent;
+            // if(parentIndex != -1)
+            // {
+            // 	AABBTree::Node parent = bvh.nodes[parentIndex];
+
+            // 	if(parent.left == nodeIndex)
+            // 	{
+            // 		//Go right
+            // 		nodeIndex = parent.right;
+            // 		box = bvh.nodes[parent.right].bbox;
+            // 	}
+            // 	else
+            // 	{
+            // 		//Go left
+            // 		nodeIndex = parent.left;
+            // 		box = bvh.nodes[parent.left].bbox;
+            // 	}
+            // }
+
+            nodeIndex = maxLength;
+            
+
+            std::cout << "No box intersect." << std::endl;
+        }
+
+        leftBol = false;
+        rightBol = false;
+    }
+}
+
+    
+
+return false;

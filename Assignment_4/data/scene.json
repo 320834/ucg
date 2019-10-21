@@ -8,9 +8,9 @@
 	"Camera":
 	{
 		"IsPerspective": true,
-		"Position": [1.5, 2, 6],
+		"Position": [0, -0.1, 1],
 		"FieldOfView": 0.7854,
-		"FocalLength": 2.0,
+		"FocalLength": 1,
 		"LensRadius": 0.08
 	},
 	"Materials": [
@@ -58,7 +58,7 @@
 		{
 			"Type": "Mesh",
 			"Material": 0,
-			"Path": "cube.off"
+			"Path": "dragon.off"
 		},
 		{
 			"Type": "Parallelogram",
