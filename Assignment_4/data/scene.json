@@ -8,9 +8,9 @@
 	"Camera":
 	{
 		"IsPerspective": true,
-		"Position": [0.5, 0, -7],
+		"Position": [1.5, 2, 6],
 		"FieldOfView": 0.7854,
-		"FocalLength": 3.0,
+		"FocalLength": 2.0,
 		"LensRadius": 0.08
 	},
 	"Materials": [
@@ -61,34 +61,11 @@
 			"Path": "cube.off"
 		},
 		{
-			"Type": "Sphere",
+			"Type": "Parallelogram",
 			"Material": 0,
-			"Position": [5, 0, 0],
-			"Radius": 1
-		},
-		{
-			"Type": "Sphere",
-			"Material": 0,
-			"Position": [4, 0.1, 1],
-			"Radius": 0.5
-		},
-		{
-			"Type": "Sphere",
-			"Material": 0,
-			"Position": [-2, 0.4, 1],
-			"Radius": 0.5
-		},
-		{
-			"Type": "Sphere",
-			"Material": 0,
-			"Position": [-5, 0.8, -1],
-			"Radius": 0.5
-		},
-		{
-			"Type": "Sphere",
-			"Material": 0,
-			"Position": [-8, 1.6, 1],
-			"Radius": 0.5
+			"Position": [0,0,0],
+			"u": [1,0,0],
+			"v": [1,2,0]
 		}
 	]
 }

@@ -279,7 +279,7 @@ int getBoundBox(std::vector<Triangle> &list)
 		return 2;
 	}
 
-	return -1;
+	return 0;
 
 }
 
@@ -663,6 +663,24 @@ bool intersect_box(const Ray &ray, const AlignedBox3d &box, Intersection &inters
 	// There is no need to set the resulting normal and ray parameter, since
 	// we are not testing with the real surface here anyway.
 
+	if(box.max()(2) == box.min()(2) || box.max()(0) == box.min()(0) || box.max()(1) == box.min()(1))
+	{
+		// std::cout << "Flat box" << std::endl;
+		Parallelogram plane;
+		
+		Vector3d A = box.corner(box.BottomLeft);
+		Vector3d B = box.corner(box.BottomRight);
+		Vector3d C = box.corner(box.TopLeft);
+
+		plane.origin = A;
+		plane.u = B;
+		plane.v = C;
+		// std::cout << A << "\n\n" << B << "\n\n" << C << std::endl;
+
+
+		return plane.intersect(ray, intersect);
+	}
+
 	Vector3d A = box.corner(box.BottomLeftFloor);
 	Vector3d B = box.corner(box.BottomRightFloor);
 	Vector3d C = box.corner(box.TopLeftFloor);
@@ -891,7 +909,14 @@ bool Mesh::intersect(const Ray &ray, Intersection &closest_hit) {
 				Intersection leftIntersect;
 				Intersection rightIntersect;
 
-				if(intersect_box(ray, rightBox, leftIntersect))
+				if(intersect_box(ray, leftBox, leftIntersect))
+				{
+					nodeIndex = left;
+					box = leftBox;
+					leftBol = true;
+				}
+
+				if(intersect_box(ray, rightBox, rightIntersect))
 				{
 					// std::cout << "Intersect left at " << nodeIndex << std::endl;
 					nodeIndex = right;
@@ -899,18 +924,15 @@ bool Mesh::intersect(const Ray &ray, Intersection &closest_hit) {
 					rightBol = true;
 				}
 
-				if(intersect_box(ray, leftBox, rightIntersect))
-				{
-					nodeIndex = left;
-					box = leftBox;
-					leftBol = true;
-				}
+				
 				
 				if(leftBol && rightBol)
 				{
 					//If hit twice, take the one closest to array.
 					double leftDis = (leftIntersect.position - ray.origin).norm();
 					double rightDis = (rightIntersect.position - ray.origin).norm();
+
+					std::cout << "Hit Two Boxes" << std::endl;
 
 					if(leftDis > rightDis)
 					{
@@ -932,11 +954,11 @@ bool Mesh::intersect(const Ray &ray, Intersection &closest_hit) {
 				
 				if(!leftBol && !rightBol)
 				{
-					//Go back through parents 
+					// Go back through parents 
 					// int parentIndex = bvh.nodes[nodeIndex].parent;
 					// if(parentIndex != -1)
 					// {
-					// 	Node parent = bvh.nodes[parentIndex];
+					// 	AABBTree::Node parent = bvh.nodes[parentIndex];
 
 					// 	if(parent.left == nodeIndex)
 					// 	{
@@ -955,7 +977,7 @@ bool Mesh::intersect(const Ray &ray, Intersection &closest_hit) {
 					nodeIndex = maxLength;
 					
 
-					std::cout << "No box intersect. This is an error " << std::endl;
+					std::cout << "No box intersect." << std::endl;
 				}
 
 				leftBol = false;
@@ -1028,8 +1050,10 @@ Vector3d ray_color(const Scene &scene, const Ray &ray, const Object &obj, const 
 Object * find_nearest_object(const Scene &scene, const Ray &ray, Intersection &closest_hit) {
 	int closest_index = -1;
 	// TODO (Assignment 2, find nearest hit)
-	std::shared_ptr<Mesh> sceneMesh = std::dynamic_pointer_cast<Mesh>(scene.objects.at(0));
 
+	// std::shared_ptr<Parallelogram> para = std::dynamic_pointer_cast<Parallelogram>(scene.objects.at(1));
+	std::shared_ptr<Mesh> sceneMesh = std::dynamic_pointer_cast<Mesh>(scene.objects.at(0));
+	
 	if (!(sceneMesh->intersect(ray,closest_hit))) {
 		// Return a NULL pointer
 		return nullptr;
@@ -1037,6 +1061,14 @@ Object * find_nearest_object(const Scene &scene, const Ray &ray, Intersection &c
 		// Return a pointer to the hit object. Don't forget to set 'closest_hit' accordingly!
 		return scene.objects[0].get();
 	}
+
+	// if (!(para->intersect(ray, closest_hit))) {
+	// 	// Return a NULL pointer
+	// 	return nullptr;
+	// } else {
+	// 	// Return a pointer to the hit object. Don't forget to set 'closest_hit' accordingly!
+	// 	return scene.objects[1].get();
+	// }
 }
 
 bool is_light_visible(const Scene &scene, const Ray &ray, const Light &light) {
@@ -1077,8 +1109,8 @@ void render_scene(const Scene &scene) {
 	// The pixel grid through which we shoot rays is at a distance 'focal_length'
 	// from the sensor, and is scaled from the canonical [-1,1] in order
 	// to produce the target field of view.
-	//Original: Vector3d grid_origin(-scale_x, scale_y, -scene.camera.focal_length);
-	Vector3d grid_origin(-scale_x, scale_y, -scene.camera.focal_length);
+	Original: Vector3d grid_origin(-scale_x, scale_y, -scene.camera.focal_length);
+	// Vector3d grid_origin(-3, 4, -scene.camera.focal_length);
 	Vector3d x_displacement(2.0/w*scale_x, 0, 0);
 	Vector3d y_displacement(0, -2.0/h*scale_y, 0);
 
@@ -1183,6 +1215,11 @@ Scene load_scene(const std::string &filename) {
 			object = sphere;
 		} else if (entry["Type"] == "Parallelogram") {
 			// TODO
+			auto para = std::make_shared<Parallelogram>();
+			para->origin = read_vec3(entry["Position"]);
+			para->u = read_vec3(entry["u"]);
+			para->v = read_vec3(entry["v"]);
+			object = para;
 		} else if (entry["Type"] == "Mesh") {
 			// Load mesh from a file
 			
@@ -1211,11 +1248,56 @@ int main(int argc, char *argv[]) {
 	
 	Scene scene = load_scene(argv[1]);
 	render_scene(scene);
+	
+	// Vector3d origin(0.25,0.25,6);
+	// Vector3d endPoint(0.25,0.25,5);
+	// Vector3d directions = endPoint - origin;
 
-	std::cout << "Found left box " << leftHitBox << std::endl;
-	std::cout << "Found right box " << rightHitTri << std::endl;
-	std::cout << "Found left tri " << leftHitTri << std::endl;
-	std::cout << "Found right tri " << rightHitTri << std::endl;
+	// Ray ray(origin,directions);
+	// Intersection intersect;
+
+	// Vector3d a(0,0,2);
+	// Vector3d b(1,0,2);
+	// Vector3d c(0,1,2);
+
+	// AlignedBox3d box = bbox_triangle(a,b,c);
+
+	// std::cout << intersect_box(ray, box, intersect) << std::endl;
+
+	// std::cout << intersect.position << std::endl;
+
+	// std::cout << intersect_triangle(ray, a,b,c,intersect,0) << std::endl;
+	// std::cout << intersect.position << std::endl;
+
+	// Vector3d A = box.corner(box.BottomLeftFloor);
+	// Vector3d B = box.corner(box.BottomRightFloor);
+	// Vector3d C = box.corner(box.TopLeftFloor);
+	// Vector3d D = box.corner(box.TopRightFloor);
+	// Vector3d E = box.corner(box.BottomLeftCeil);
+	// Vector3d F = box.corner(box.BottomRightCeil);
+	// Vector3d G = box.corner(box.TopLeftCeil);
+	// Vector3d H = box.corner(box.TopRightCeil);
+
+
+
+	// std::cout << "A \n" << A << std::endl;
+	// std::cout << "B \n" << B << std::endl;
+	// std::cout << "C \n" << C << std::endl;
+	// std::cout << "D \n" << D << std::endl;
+	// std::cout << "E \n" << E << std::endl;
+	// std::cout << "F \n" << F << std::endl;
+	// std::cout << "G \n" << G << std::endl;
+	// std::cout << "H \n" << H << std::endl;
+
+	
+
+	return 0;
+}
+
+// std::cout << "Found left box " << leftHitBox << std::endl;
+	// std::cout << "Found right box " << rightHitTri << std::endl;
+	// std::cout << "Found left tri " << leftHitTri << std::endl;
+	// std::cout << "Found right tri " << rightHitTri << std::endl;
 
 	// std::shared_ptr<Mesh> sceneMesh = std::dynamic_pointer_cast<Mesh>(scene.objects.at(0));
 	
@@ -1239,11 +1321,6 @@ int main(int argc, char *argv[]) {
 
 	// std::cout << intersect.position << std::endl;
 
-	
-
-	return 0;
-}
-
 // Vector3d a(0,0,0);
 	// Vector3d b(1,0,5);
 	// Vector3d c(0,1,1);
@@ -1259,3 +1336,34 @@ int main(int argc, char *argv[]) {
 	// std::cout << "Bottom Right Ceil: " << std::endl << test.corner(test.BottomRightCeil) << std::endl;
 	// std::cout << "Top Left Ceil: " << std::endl << test.corner(test.TopLeftCeil) << std::endl;
 	// std::cout << "Top Right Ceil: " << std::endl << test.corner(test.TopRightCeil) << std::endl;
+
+// {
+		// 	"Type": "Sphere",
+		// 	"Material": 0,
+		// 	"Position": [5, 0, 0],
+		// 	"Radius": 1
+		// },
+		// {
+		// 	"Type": "Sphere",
+		// 	"Material": 0,
+		// 	"Position": [4, 0.1, 1],
+		// 	"Radius": 0.5
+		// },
+		// {
+		// 	"Type": "Sphere",
+		// 	"Material": 0,
+		// 	"Position": [-2, 0.4, 1],
+		// 	"Radius": 0.5
+		// },
+		// {
+		// 	"Type": "Sphere",
+		// 	"Material": 0,
+		// 	"Position": [-5, 0.8, -1],
+		// 	"Radius": 0.5
+		// },
+		// {
+		// 	"Type": "Sphere",
+		// 	"Material": 0,
+		// 	"Position": [-8, 1.6, 1],
+		// 	"Radius": 0.5
+		// }
