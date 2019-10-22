@@ -122,3 +122,11 @@ while(nodeIndex < maxLength && intersect_box(ray,box, wholeIntersect))
     
 
 return false;
+
+		{
+			"Type": "Parallelogram",
+			"Material": 0,
+			"Position": [0,0,0],
+			"u": [1,0,0],
+			"v": [1,2,0]
+		}

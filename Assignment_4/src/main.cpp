@@ -579,10 +579,6 @@ bool Parallelogram::intersect(const Ray &ray, Intersection &hit) {
 }
 
 // -----------------------------------------------------------------------------
-int leftHitBox = 0;
-int rightHitBox = 0;
-int leftHitTri = 0;
-int rightHitTri = 0;
 
 bool intersect_triangle(const Ray &ray, const Vector3d &a, const Vector3d &b, const Vector3d &c, Intersection &hit, const int test) {
 	// TODO (Assignment 3)
@@ -609,23 +605,16 @@ bool intersect_triangle(const Ray &ray, const Vector3d &a, const Vector3d &b, co
 
 	if(result(0) >= 0 && result(1) >= 0 && result(0)+result(1) <= 1 && result(2) >= 0)
 	{
-		if(test == 1)
-		{
-			leftHitTri++;
-		}
-
-		if(test == 2)
-		{	
-			rightHitTri++;
-		}
-		// std::cout << "Found triangle hit" << std::endl;
-		// std::cout << a << std::endl;
-		// std::cout << b << std::endl;
-		// std::cout << c << std::endl;
-		// std::cout << std::endl;
+	
 		Vector3d intersection = ray.origin + result(2) * ray_direction;
 		hit.position = intersection;
-		hit.normal = intersection.normalized();
+
+		Vector3d one = b - a;
+		Vector3d two = c - a;
+
+		Vector3d normal = one.cross(two);
+		hit.normal = normal.normalized();
+
 		hit.ray_param = result(2);
 
 		// std::cout << "Found triangle hit " << hit.position << std::endl;
@@ -769,9 +758,11 @@ bool Mesh::intersect(const Ray &ray, Intersection &closest_hit) {
 	// TODO (Assignment 3)
 
 	// Method (1): Traverse every triangle and return the closest hit.
-
+	
+	//This method does it the brute force way
 	if(d == 0)
 	{
+
 		int maxLength = facets.rows();
 
 		Vector3d A;
@@ -829,6 +820,7 @@ bool Mesh::intersect(const Ray &ray, Intersection &closest_hit) {
 
 	//Check if ray hits first box
 
+	//This method checks each tree.
 	if(d == 1)
 	{
 		return searchTree(ray, closest_hit, 0);
@@ -944,10 +936,23 @@ Vector3d ray_color(const Scene &scene, const Ray &ray, const Object &object, con
 Object * find_nearest_object(const Scene &scene, const Ray &ray, Intersection &closest_hit);
 bool is_light_visible(const Scene &scene, const Ray &ray, const Light &light);
 Vector3d shoot_ray(const Scene &scene, const Ray &ray, int max_bounce);
+double specularShading(double specular_coefficient, double light_intensity, double phong_exponent, Vector3d normal, Vector3d view_ray, Vector3d ray_to_light);
 
 Mesh meshObj;
 
 // -----------------------------------------------------------------------------
+
+double specularShading(double specular_coefficient, double light_intensity, double phong_exponent, Vector3d normal, Vector3d view_ray, Vector3d ray_to_light)
+{
+	Vector3d h = (view_ray + ray_to_light).normalized();
+
+	double angleValue = normal.dot(h);
+	angleValue = std::max(0.0, angleValue);
+
+	//TODO: Take the phong exponent and exponent it to light intensity
+	angleValue = pow(angleValue, phong_exponent);
+	return specular_coefficient * light_intensity * angleValue;
+}
 
 Vector3d ray_color(const Scene &scene, const Ray &ray, const Object &obj, const Intersection &hit, int max_bounce) {
 	// Material for hit object
@@ -962,17 +967,33 @@ Vector3d ray_color(const Scene &scene, const Ray &ray, const Object &obj, const 
 		Vector3d Li = (light.position - hit.position).normalized();
 		Vector3d N = hit.normal;
 
+		Vector3d lightInten = light.intensity;
+
 		// TODO (Assignment 2, shadow rays)
+		Ray rayTestLight(hit.position, Li);
+
+		// if(is_light_visible(scene,rayTestLight,light))
+		// {
+		// 	//Add color
+			
+		// }
+		// else
+		// {
+		// 	//Do not add color
+		// 	Vector3d a(10,10,10);
+		// 	lightInten = a;
+		// }
 
 		// Diffuse contribution
 		Vector3d diffuse = mat.diffuse_color * std::max(Li.dot(N), 0.0);
 
 		// TODO (Assignment 2, specular contribution)
+		// double specularValue = specularShading(1,1,1000)
 		Vector3d specular(0, 0, 0);
 
 		// Attenuate lights according to the squared distance to the lights
 		Vector3d D = light.position - hit.position;
-		lights_color += (diffuse + specular).cwiseProduct(light.intensity) /  D.squaredNorm();
+		lights_color += (diffuse + specular).cwiseProduct(lightInten) /  D.squaredNorm();
 	}
 
 	// TODO (Assignment 2, reflected ray)
@@ -992,6 +1013,7 @@ Vector3d ray_color(const Scene &scene, const Ray &ray, const Object &obj, const 
 Object * find_nearest_object(const Scene &scene, const Ray &ray, Intersection &closest_hit) {
 	int closest_index = -1;
 	// TODO (Assignment 2, find nearest hit)
+	// Already finished
 
 	// std::shared_ptr<Parallelogram> para = std::dynamic_pointer_cast<Parallelogram>(scene.objects.at(1));
 	std::shared_ptr<Mesh> sceneMesh = std::dynamic_pointer_cast<Mesh>(scene.objects.at(0));
@@ -1015,6 +1037,24 @@ Object * find_nearest_object(const Scene &scene, const Ray &ray, Intersection &c
 
 bool is_light_visible(const Scene &scene, const Ray &ray, const Light &light) {
 	// TODO (Assignment 2, shadow ray)
+
+	//Draw from one shadow ray to another 
+
+
+	Intersection inter;
+
+	//Loop through scene
+	int objectSize = scene.objects.size();
+	for(int i = 0; i < objectSize; i++)
+	{
+		bool a = scene.objects[i]->intersect(ray, inter);
+
+		if(!a)
+		{
+			return false;
+		}
+	}
+
 	return true;
 }
 
@@ -1034,8 +1074,9 @@ Vector3d shoot_ray(const Scene &scene, const Ray &ray, int max_bounce) {
 void render_scene(const Scene &scene) {
 	std::cout << "Simple ray tracer." << std::endl;
 
-	int w = 640;
-	int h = 480;
+	int w = 1280;
+	int h = 1060;
+	//original: int h = 480;
 	MatrixXd R = MatrixXd::Zero(w, h);
 	MatrixXd G = MatrixXd::Zero(w, h);
 	MatrixXd B = MatrixXd::Zero(w, h);
@@ -1045,12 +1086,13 @@ void render_scene(const Scene &scene) {
 	// The sensor grid is at a distance 'focal_length' from the camera center,
 	// and covers an viewing angle given by 'field_of_view'.
 	double aspect_ratio = double(w) / double(h);
-	double scale_y = 2.5; // TODO: Stretch the pixel grid by the proper amount here
-	double scale_x = 2.5; //
+	double scale_y = 1.0; // TODO: Stretch the pixel grid by the proper amount here
+	double scale_x = 1.0; //
 
 	// The pixel grid through which we shoot rays is at a distance 'focal_length'
 	// from the sensor, and is scaled from the canonical [-1,1] in order
 	// to produce the target field of view.
+
 	Original: Vector3d grid_origin(-scale_x, scale_y, -scene.camera.focal_length);
 	// Vector3d grid_origin(-3, 4, -scene.camera.focal_length);
 	Vector3d x_displacement(2.0/w*scale_x, 0, 0);
@@ -1084,7 +1126,7 @@ void render_scene(const Scene &scene) {
 			Intersection hit;
 
 
-			int max_bounce = 5;
+			int max_bounce = 10;
 			Vector3d C = shoot_ray(scene, ray, max_bounce);
 			R(i, j) = C(0);
 			G(i, j) = C(1);
