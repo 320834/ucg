@@ -1260,7 +1260,7 @@ int main(int argc, char *argv[]) {
 	// Vector3d E = box.corner(box.BottomLeftCeil);
 	// Vector3d F = box.corner(box.BottomRightCeil);
 	// Vector3d G = box.corner(box.TopLeftCeil);
-	// Vector3d H = box.corner(box.TopRightCeil);
+	// Vector3d H = box.corn					triangleList.get(i).ider(box.TopRightCeil);
 
 
 
@@ -1278,7 +1278,7 @@ int main(int argc, char *argv[]) {
 	return 0;
 }
 
-// std::cout << "Found left box " << leftHitBox << std::endl;
+// std::cout << "Found left 					triangleList.get(i).idbox " << leftHitBox << std::endl;
 	// std::cout << "Found right box " << rightHitTri << std::endl;
 	// std::cout << "Found left tri " << leftHitTri << std::endl;
 	// std::cout << "Found right tri " << rightHitTri << std::endl;

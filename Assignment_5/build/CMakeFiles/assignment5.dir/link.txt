@@ -1,0 +1,1 @@
+/usr/bin/c++    -rdynamic CMakeFiles/assignment5.dir/src/main.cpp.o CMakeFiles/assignment5.dir/src/helpers.cpp.o  -o assignment5 glfw/src/libglfw3.a glad/libglad.a -lrt -lm -lX11 -lpthread -ldl 

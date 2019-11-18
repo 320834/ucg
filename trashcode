@@ -130,3 +130,30 @@ return false;
 			"u": [1,0,0],
 			"v": [1,2,0]
 		}
+
+wget --no-check-certificate -P ext/glfw/include/GL https://www.opengl.org/registry/api/GL/glcorearb.h --2019-11-06 02:00:18--  https://www.opengl.org/registry/api/GL/glcorearb.h
+
+Matrix3d transitionMat;
+		transitionMat <<  1, 0, diffX, 0, 1, diffY, 0, 0, 1;
+
+		//Update Traingle
+		Triangle curr = triangleList.at(indexSelect);
+
+		//Update V
+		Vector3d aPos(V.col(indexSelect*3)(0), V.col(indexSelect*3)(1), 1);
+		Vector3d bPos(V.col((indexSelect*3) + 1)(0),V.col((indexSelect*3) + 1)(1), 1);
+		Vector3d cPos(V.col((indexSelect*3) + 2)(0),V.col((indexSelect*3) + 2)(1), 1);
+
+		Vector3d aRes = (transitionMat * aPos);
+		Vector3d bRes = (transitionMat * bPos);
+		Vector3d cRes = (transitionMat * cPos);
+
+		// std::cout << aRes << bRes << cRes << std::endl << std::endl;
+
+		V.col(indexSelect*3) << aRes(0),aRes(1);
+		V.col((indexSelect*3)+1) << bRes(0), bRes(1);
+		V.col((indexSelect*3)+2) << cRes(0), cRes(1);
+
+		curr.A << V.col(indexSelect*3)(0) , V.col(indexSelect*3)(1);
+		curr.B << V.col((indexSelect*3) + 1)(0), V.col((indexSelect*3) + 1)(1);
+		curr.C << V.col((indexSelect * 3) + 2)(0), V.col((indexSelect * 3) + 2)(1);

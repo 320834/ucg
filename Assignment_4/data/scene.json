@@ -58,7 +58,7 @@
 		{
 			"Type": "Mesh",
 			"Material": 0,
-			"Path": "bunny.off"
+			"Path": "dragon.off"
 		}
 	]
 }
