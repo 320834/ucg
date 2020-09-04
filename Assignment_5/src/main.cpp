@@ -683,11 +683,11 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 		case GLFW_KEY_P:
 			if(action == 0)
 			{
-				Vector2d mouse(xMousePos,yMousePos);
-				indexSelect = selectTriangle(mouse);
 
 				if(indexSelect != -1)
 				{
+					Vector2d mouse(xMousePos,yMousePos);
+					indexSelect = selectTriangle(mouse);
 					deleteTriangle();
 				}
 
